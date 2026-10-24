@@ -964,6 +964,7 @@ function buildScene(){
   dView.normalize();
   if(dView.clone().negate().cross(new THREE.Vector3(0,1,0)).x < 0) dView.negate();
   var axis = dView.clone();
+  SCH.right = dView.clone().negate().cross(new THREE.Vector3(0,1,0)).normalize();
   var c1 = down.clone().applyAxisAngle(axis, 2*Math.PI/3), c2 = down.clone().applyAxisAngle(axis, -2*Math.PI/3);
   var fDir = c1.y > c2.y ? c1 : c2, angB = c1.y > c2.y ? -2*Math.PI/3 : 2*Math.PI/3;
   var fab2 = fabCas.map(function(a){ return {num:a.num, res:a.res, ch:a.ch, p:a.p.clone().sub(hinge).applyAxisAngle(axis, angB).add(hinge)}; });
@@ -1002,9 +1003,11 @@ function buildScene(){
   SCH.statDimer = [new THREE.Vector3(-9,-240,0), new THREE.Vector3(9,-240,0)];
 
   /* posizioni prima del legame */
-  OFF.il4 = new THREE.Vector3(-150, 110, -60);
-  OFF.gc = new THREE.Vector3(110, 0, 0);
-  OFF.r13 = new THREE.Vector3(210, 0, 0);
+  /* due serie di posizioni: vista frontale (fasi 2-3) e vista laterale (fasi 1, 4, 5) */
+  var Rv = SCH.right;
+  OFF.front = {il4: new THREE.Vector3(-150, 110, -60), gc: new THREE.Vector3(110, 0, 0), r13: new THREE.Vector3(210, 0, 0)};
+  OFF.side = {il4: Rv.clone().multiplyScalar(-150).add(new THREE.Vector3(0, 110, 0)), gc: Rv.clone().multiplyScalar(105), r13: Rv.clone().multiplyScalar(200)};
+  OFF.il4 = OFF.side.il4; OFF.gc = OFF.side.gc; OFF.r13 = OFF.side.r13;
   OFF.il13drop = new THREE.Vector3(30, 125, -10);
   OFF.dup = new THREE.Vector3(0, 210, 0);
   OFF.zero = new THREE.Vector3();
@@ -1089,7 +1092,10 @@ function baseline(){
 }
 
 function goPhase(p, keepCam){
+  var set = (p === 2 || p === 3) ? OFF.front : OFF.side;
+  OFF.il4 = set.il4; OFF.gc = set.gc; OFF.r13 = set.r13;
   state.phase = p; state.t = 0; baseline(); M.r4a.epiOn = false; lastMsg = null;
+  if(p >= 4) M.gc.group.visible = false;
   if(p === 2){ M.dup.group.visible = false; M.il13.group.visible = false; }
   if(p === 3){ M.dup.group.visible = false; M.il4.group.visible = false; M.il13.group.position.copy(OFF.r13).add(OFF.il13drop); }
   if(p === 5){ M.dup.group.position.copy(OFF.zero); paint(M.r4a, M.r4a.epiFn); paint(M.dup, M.dup.paraFn); setTails(false); M.il13.group.position.copy(OFF.r13); }
